@@ -41,6 +41,9 @@ dependencies:
   # Google Sign-In for OAuth
   google_sign_in: ^6.2.1
   
+  # Official Google Sign-In button UI
+  sign_in_button: ^3.2.0
+  
   # Environment variables
   flutter_dotenv: ^5.1.0
   

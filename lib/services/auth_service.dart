@@ -169,6 +169,7 @@ class AuthService extends ChangeNotifier {
       // User will be redirected back automatically
       // Supabase will handle user creation
       // We don't wait for the result here as it's a redirect
+      // Note: markOnboardingCompleted() will be called from the UI when auth state changes
 
       if (kDebugMode) {
         print('OAuth redirect initiated - user will be redirected to Google');

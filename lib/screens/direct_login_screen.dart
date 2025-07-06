@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import 'phone_auth_screen.dart';
+import '../onboarding_screen.dart';
 import 'landing_screen.dart';
 
 class DirectLoginScreen extends StatefulWidget {
@@ -66,7 +66,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
   void _continueWithPhone() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const PhoneAuthScreen()));
+    ).push(MaterialPageRoute(builder: (context) => const OnboardingScreen()));
   }
 
   Future<void> _continueWithDemo() async {

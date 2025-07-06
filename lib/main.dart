@@ -5,7 +5,6 @@ import 'config/supabase_config.dart';
 import 'services/auth_service.dart';
 import 'onboarding_screen.dart';
 import 'screens/landing_screen.dart';
-import 'screens/phone_auth_screen.dart';
 import 'screens/direct_login_screen.dart';
 import 'home_page.dart';
 
@@ -62,7 +61,6 @@ class FootstepsApp extends StatelessWidget {
         routes: {
           '/onboarding': (context) => const OnboardingScreen(),
           '/direct-login': (context) => const DirectLoginScreen(),
-          '/phone-auth': (context) => const PhoneAuthScreen(),
           '/landing': (context) => const LandingScreen(),
           '/home': (context) => const HomePage(),
         },
