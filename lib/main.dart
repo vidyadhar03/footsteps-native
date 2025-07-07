@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'config/supabase_config.dart';
 import 'services/auth_service.dart';
 import 'onboarding_screen.dart';
-import 'screens/landing_screen.dart';
 import 'screens/direct_login_screen.dart';
 import 'home_page.dart';
 
@@ -61,7 +60,6 @@ class FootstepsApp extends StatelessWidget {
         routes: {
           '/onboarding': (context) => const OnboardingScreen(),
           '/direct-login': (context) => const DirectLoginScreen(),
-          '/landing': (context) => const LandingScreen(),
           '/home': (context) => const HomePage(),
         },
       ),
@@ -85,8 +83,8 @@ class AuthWrapper extends StatelessWidget {
 
         // Mobile-first onboarding flow logic
         if (authService.isAuthenticated) {
-          // User is logged in → go to main app
-          return const LandingScreen();
+          // User is logged in → go directly to main app
+          return const HomePage();
         } else if (authService.hasCompletedOnboarding) {
           // User has seen onboarding before but is not logged in
           // → show clean login screen without onboarding (native mobile app pattern)

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 import 'package:flutter/foundation.dart';
 import 'services/auth_service.dart';
-import 'screens/landing_screen.dart';
+import 'home_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -68,9 +68,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       // Mark onboarding as completed for web platform
       authService.markOnboardingCompleted();
 
-      // Navigate to landing screen
+      // Navigate directly to main app
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
   }
@@ -83,9 +83,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _phoneFocusNode.dispose();
     _otpFocusNode.dispose();
 
-    // Remove auth state listener
-    final authService = Provider.of<AuthService>(context, listen: false);
-    authService.removeListener(_handleAuthStateChange);
+    // Remove auth state listener only if the widget is still mounted
+    // and we can safely access the Provider
+    try {
+      if (mounted) {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        authService.removeListener(_handleAuthStateChange);
+      }
+    } catch (e) {
+      // Handle case where context is no longer available
+      // This can happen during hot reload or when the widget tree is rebuilt
+      if (kDebugMode) {
+        print('Could not remove auth listener during dispose: $e');
+      }
+    }
 
     super.dispose();
   }
@@ -173,7 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (success) {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LandingScreen()),
+          MaterialPageRoute(builder: (context) => const HomePage()),
         );
       }
     } else {
@@ -241,6 +252,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Future<void> _continueWithGoogle() async {
+    if (!mounted) return;
+
     final authService = Provider.of<AuthService>(context, listen: false);
 
     setState(() {
@@ -250,7 +263,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     try {
       final success = await authService.signInWithGoogle();
 
-      if (success && mounted) {
+      if (!mounted) return;
+
+      if (success) {
         // For web platforms, we need to wait for the auth state change
         // rather than immediately navigating
         if (kIsWeb) {
@@ -265,10 +280,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           });
 
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const LandingScreen()),
+            MaterialPageRoute(builder: (context) => const HomePage()),
           );
         }
-      } else if (mounted && authService.errorMessage != null) {
+      } else if (authService.errorMessage != null) {
         setState(() {
           _isGoogleSignInInProgress = false;
         });
@@ -281,25 +296,27 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               label: 'Dismiss',
               textColor: Colors.white,
               onPressed: () {
-                authService.clearError();
+                if (mounted) {
+                  authService.clearError();
+                }
               },
             ),
           ),
         );
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _isGoogleSignInInProgress = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sign-in failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sign-in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -310,7 +327,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
   }
@@ -481,7 +498,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                     const SizedBox(height: 16),
 
                                     // Send OTP Button
-                                    Container(
+                                    SizedBox(
                                       width: double.infinity,
                                       height: 56,
                                       child: ElevatedButton(
@@ -599,7 +616,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                     const SizedBox(height: 16),
 
                                     // Verify OTP Button
-                                    Container(
+                                    SizedBox(
                                       width: double.infinity,
                                       height: 56,
                                       child: ElevatedButton(
@@ -721,7 +738,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                     const SizedBox(height: 8),
 
                                     // Official Google Sign-In Button
-                                    Container(
+                                    SizedBox(
                                       width: double.infinity,
                                       height: 56,
                                       child: _isGoogleSignInInProgress
@@ -829,7 +846,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       opacity: _fadeAnimation,
                       child: SlideTransition(
                         position: _slideAnimation,
-                        child: Container(
+                        child: SizedBox(
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(

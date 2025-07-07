@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/supabase_config.dart';
+import 'dart:io';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -22,10 +23,38 @@ class AuthService extends ChangeNotifier {
   bool get isSupabaseConfigured => SupabaseConfig.isConfigured;
 
   AuthService() {
-    // Initialize Google Sign-In with platform-specific client ID
-    _googleSignIn = GoogleSignIn(
-      clientId: SupabaseConfig.googleClientIdForPlatform,
-    );
+    // Initialize Google Sign-In with correct client IDs per platform
+    // On Android, the GoogleSignIn plugin expects the *server* (web) client ID
+    // via the `serverClientId` parameter, **not** the Android client ID.
+    // Passing the Android client ID triggers a DEVELOPER_ERROR (code 10).
+    if (kIsWeb) {
+      // Web platform uses default initialization; Supabase handles OAuth flow.
+      _googleSignIn = GoogleSignIn();
+    } else {
+      try {
+        if (Platform.isAndroid) {
+          // Use the WEB client ID as serverClientId on Android
+          _googleSignIn = GoogleSignIn(
+            serverClientId: SupabaseConfig.googleClientIdWeb,
+          );
+        } else if (Platform.isIOS) {
+          // iOS still requires its own clientId, but serverClientId should be the web client ID
+          _googleSignIn = GoogleSignIn(
+            clientId: SupabaseConfig.googleClientIdIos,
+            serverClientId: SupabaseConfig.googleClientIdWeb,
+          );
+        } else {
+          // Fallback for other platforms
+          _googleSignIn = GoogleSignIn();
+        }
+      } catch (e) {
+        // Platform lookup may fail in unit tests or unsupported platforms
+        _googleSignIn = GoogleSignIn();
+        if (kDebugMode) {
+          print('GoogleSignIn initialization fallback: $e');
+        }
+      }
+    }
 
     // Initialize app state
     _initializeAppState();
@@ -181,7 +210,7 @@ class AuthService extends ChangeNotifier {
       if (kDebugMode) {
         print('Web Google OAuth error: $e');
       }
-      throw e;
+      rethrow;
     }
   }
 
@@ -254,7 +283,7 @@ class AuthService extends ChangeNotifier {
       if (kDebugMode) {
         print('Mobile Google Sign-In error: $e');
       }
-      throw e;
+      rethrow;
     }
   }
 

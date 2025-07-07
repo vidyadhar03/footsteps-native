@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "123456789",
+    "project_id": "footsteps-minimal",
+    "storage_bucket": "footsteps-minimal.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789:android:abcdef123456",
+        "android_client_info": {
+          "package_name": "com.example.footsteps"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "72287434828-pb5r7ggmcacigbtb69o2l1sajpddo4gf",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.footsteps",
+            "certificate_hash": "0B:56:7D:48:8D:08:6D:B9:82:57:87:E3:B4:91:FE:63:A1:AD:F7:63"
+          }
+        },
+        {
+          "client_id": "72287434828-i915spl5kbvhghdmu6cri77as8q236c9",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummyKeyForGoogleSignIn"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "72287434828-i915spl5kbvhghdmu6cri77as8q236c9",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

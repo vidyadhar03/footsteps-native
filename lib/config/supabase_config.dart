@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseConfig {
   static const String _supabaseUrlKey = 'SUPABASE_URL';
   static const String _supabaseAnonKeyKey = 'SUPABASE_ANON_KEY';
-  static const String _googleClientIdKey = 'GOOGLE_CLIENT_ID';
+  static const String _googleClientIdAndroidKey = 'GOOGLE_CLIENT_ID_ANDROID';
   static const String _googleClientIdIosKey = 'GOOGLE_CLIENT_ID_IOS';
   static const String _googleClientIdWebKey = 'GOOGLE_CLIENT_ID_WEB';
 
@@ -37,7 +37,7 @@ class SupabaseConfig {
   }
 
   static String? get googleClientId {
-    final clientId = dotenv.env[_googleClientIdKey];
+    final clientId = dotenv.env[_googleClientIdAndroidKey];
     if (clientId == null ||
         clientId.isEmpty ||
         clientId.contains('your_google_client_id_here')) {

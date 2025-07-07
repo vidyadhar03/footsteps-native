@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../onboarding_screen.dart';
-import 'landing_screen.dart';
+import '../home_page.dart';
 
 class DirectLoginScreen extends StatefulWidget {
   const DirectLoginScreen({super.key});
@@ -44,7 +44,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } else if (mounted && authService.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +76,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
   }

@@ -1,0 +1,16 @@
+# Copy this file to .env.local and fill in your actual values
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Google OAuth Client IDs
+# You need to get these from Google Cloud Console
+# For Android: OAuth 2.0 Client ID for Android
+GOOGLE_CLIENT_ID=your_google_client_id_for_android_here
+
+# For iOS: OAuth 2.0 Client ID for iOS
+GOOGLE_CLIENT_ID_IOS=your_google_client_id_for_ios_here
+
+# For Web: OAuth 2.0 Client ID for Web
+GOOGLE_CLIENT_ID_WEB=your_google_client_id_for_web_here 
