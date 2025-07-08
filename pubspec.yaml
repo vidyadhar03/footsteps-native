@@ -36,10 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # Supabase for authentication and backend
-  supabase_flutter: ^2.9.0
+  supabase_flutter: 2.9.0
   
   # Google Sign-In for OAuth
-  google_sign_in: ^6.2.1
+  google_sign_in: 6.2.1
   
   # Official Google Sign-In button UI
   sign_in_button: ^3.2.0
@@ -50,6 +50,7 @@ dependencies:
   # State management and utilities
   provider: ^6.1.2
   shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.2
   
   # HTTP requests
   http: ^1.1.0

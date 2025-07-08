@@ -70,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
       // Navigate directly to main app
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute<void>(builder: (context) => const HomePage()),
       );
     }
   }
@@ -84,15 +84,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _otpFocusNode.dispose();
 
     // Remove auth state listener only if the widget is still mounted
-    // and we can safely access the Provider
     try {
       if (mounted) {
         final authService = Provider.of<AuthService>(context, listen: false);
         authService.removeListener(_handleAuthStateChange);
       }
     } catch (e) {
-      // Handle case where context is no longer available
-      // This can happen during hot reload or when the widget tree is rebuilt
       if (kDebugMode) {
         print('Could not remove auth listener during dispose: $e');
       }
@@ -152,6 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       }
     } else {
       if (mounted) {
+        final authService = Provider.of<AuthService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authService.errorMessage ?? 'Failed to send OTP'),
@@ -184,11 +182,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (success) {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute<void>(builder: (context) => const HomePage()),
         );
       }
     } else {
       if (mounted) {
+        final authService = Provider.of<AuthService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -267,11 +266,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
       if (success) {
         // For web platforms, we need to wait for the auth state change
-        // rather than immediately navigating
         if (kIsWeb) {
-          // The OAuth redirect has been initiated, user will be redirected to Google
-          // The loading state will continue until the page redirects
-          // Auth state listener will handle the rest when user returns
           return;
         } else {
           // For mobile platforms, sign-in is complete, navigate immediately
@@ -280,7 +275,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           });
 
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomePage()),
+            MaterialPageRoute<void>(builder: (context) => const HomePage()),
           );
         }
       } else if (authService.errorMessage != null) {
@@ -327,7 +322,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute<void>(builder: (context) => const HomePage()),
       );
     }
   }
@@ -339,495 +334,640 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
-          child: Consumer<AuthService>(
-            builder: (context, authService, child) {
-              return Column(
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // App Icon with Animation
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: Container(
+          child: Column(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Icon with Animation
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/app_icon.png',
                               width: 140,
                               height: 140,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+
+                    // App Name
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Text(
+                          'Footsteps',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 36,
                               ),
-                              child: ClipOval(
-                                child: Image.asset(
-                                  'assets/images/app_icon.png',
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // App Description
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Text(
+                          'Turn your journeys into stories,\nstories into tribes',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.7),
+                                fontSize: 18,
+                                height: 1.5,
                               ),
-                            ),
-                          ),
                         ),
-                        const SizedBox(height: 50),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
 
-                        // App Name
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: Text(
-                              'Footsteps',
-                              style: Theme.of(context).textTheme.headlineLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontSize: 36,
+                    // Phone Number Input Section
+                    Selector<AuthService, bool>(
+                      selector: (context, authService) => authService.isSupabaseConfigured,
+                      builder: (context, isSupabaseConfigured, child) => 
+                          isSupabaseConfigured
+                              ? FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: SlideTransition(
+                                    position: _slideAnimation,
+                                    child: Column(
+                                      children: [
+                                        // Back button (only show during OTP verification)
+                                        if (_isOtpSent) ...[
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                onPressed: _goBackToPhoneInput,
+                                                icon: const Icon(
+                                                  Icons.arrow_back_ios,
+                                                ),
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface,
+                                              ),
+                                              Text(
+                                                'Back to Phone Number',
+                                                style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                        ],
+
+                                        // Phone Number Input Field (only show if OTP not sent)
+                                        if (!_isOtpSent) ...[
+                                          Container(
+                                            width: double.infinity,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: TextField(
+                                              controller: _phoneController,
+                                              focusNode: _phoneFocusNode,
+                                              keyboardType: TextInputType.phone,
+                                              textInputAction: TextInputAction.done,
+                                              decoration: const InputDecoration(
+                                                hintText: 'Phone Number',
+                                                hintStyle: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 16,
+                                                ),
+                                                border: InputBorder.none,
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 18,
+                                                ),
+                                                prefixIcon: Icon(
+                                                  Icons.phone,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .digitsOnly,
+                                                LengthLimitingTextInputFormatter(15),
+                                              ],
+                                              onSubmitted: (_) => _sendOTP(),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Send OTP Button
+                                          SizedBox(
+                                            width: double.infinity,
+                                            height: 56,
+                                            child: Selector<AuthService, bool>(
+                                              selector: (context, authService) =>
+                                                  authService.isLoading,
+                                              builder: (context, isLoading, child) =>
+                                                  ElevatedButton(
+                                                onPressed:
+                                                    isLoading ? null : _sendOTP,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  foregroundColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(16),
+                                                  ),
+                                                  elevation: 0,
+                                                ),
+                                                child: isLoading
+                                                    ? SizedBox(
+                                                        width: 24,
+                                                        height: 24,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                  Color>(
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .onPrimary,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'Send OTP',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+
+                                        // OTP Input Field (only show if OTP sent)
+                                        if (_isOtpSent) ...[
+                                          Text(
+                                            'Enter the 6-digit code sent to',
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.7),
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _formatPhoneNumber(
+                                                _phoneController.text),
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+
+                                          Container(
+                                            width: double.infinity,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: TextField(
+                                              controller: _otpController,
+                                              focusNode: _otpFocusNode,
+                                              keyboardType: TextInputType.number,
+                                              textInputAction: TextInputAction.done,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 8,
+                                              ),
+                                              decoration: const InputDecoration(
+                                                hintText: '000000',
+                                                hintStyle: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 24,
+                                                  letterSpacing: 8,
+                                                ),
+                                                border: InputBorder.none,
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 18,
+                                                ),
+                                              ),
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .digitsOnly,
+                                                LengthLimitingTextInputFormatter(6),
+                                              ],
+                                              onSubmitted: (_) => _verifyOtp(),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Verify OTP Button
+                                          SizedBox(
+                                            width: double.infinity,
+                                            height: 56,
+                                            child: Selector<AuthService, bool>(
+                                              selector: (context, authService) =>
+                                                  authService.isLoading,
+                                              builder: (context, isLoading, child) =>
+                                                  ElevatedButton(
+                                                onPressed:
+                                                    isLoading ? null : _verifyOtp,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  foregroundColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(16),
+                                                  ),
+                                                  elevation: 0,
+                                                ),
+                                                child: isLoading
+                                                    ? SizedBox(
+                                                        width: 24,
+                                                        height: 24,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                  Color>(
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .onPrimary,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'Verify OTP',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Resend OTP Button
+                                          TextButton(
+                                            onPressed: _resendCountdown > 0 ||
+                                                    _isResendingOtp
+                                                ? null
+                                                : _resendOtp,
+                                            child: _isResendingOtp
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    _resendCountdown > 0
+                                                        ? 'Resend OTP in ${_resendCountdown}s'
+                                                        : 'Resend OTP',
+                                                    style: TextStyle(
+                                                      color: _resendCountdown > 0
+                                                          ? Colors.grey
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .primary,
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ],
+
+                                        // OR Divider and Google Sign-In (only show if OTP not sent)
+                                        if (!_isOtpSent) ...[
+                                          const SizedBox(height: 12),
+
+                                          // OR Divider
+                                          Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 1,
+                                                    color: Colors.grey.shade300,
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                                  child: Text(
+                                                    'OR',
+                                                    style: TextStyle(
+                                                      color: Colors.grey.shade600,
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 1,
+                                                    color: Colors.grey.shade300,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+
+                                          // Google Sign-In Button
+                                          SizedBox(
+                                            width: double.infinity,
+                                            height: 56,
+                                            child: _isGoogleSignInInProgress
+                                                ? Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey.shade100,
+                                                      borderRadius:
+                                                          BorderRadius.circular(16),
+                                                      border: Border.all(
+                                                        color: Colors.grey.shade300,
+                                                      ),
+                                                    ),
+                                                    child: const Center(
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment.center,
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              valueColor:
+                                                                  AlwaysStoppedAnimation<
+                                                                      Color>(
+                                                                      Colors.black54),
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 12),
+                                                          Text(
+                                                            'Signing in...',
+                                                            style: TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight.w500,
+                                                              color: Colors.black54,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Selector<AuthService, bool>(
+                                                    selector: (context, authService) =>
+                                                        authService.isLoading,
+                                                    builder: (context, isLoading,
+                                                            child) =>
+                                                        SignInButton(
+                                                      Buttons.google,
+                                                      text: 'Continue with Google',
+                                                      onPressed: isLoading
+                                                          ? () {}
+                                                          : () =>
+                                                              _continueWithGoogle(),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                16),
+                                                      ),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                                )
+                              : const SizedBox.shrink(),
+                    ),
 
-                        // App Description
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: Text(
-                              'Turn your journeys into stories,\nstories into tribes',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
-                                    fontSize: 18,
-                                    height: 1.5,
-                                  ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 40),
+                    // Demo Mode Warning
+                    Selector<AuthService, bool>(
+                      selector: (context, authService) =>
+                          !authService.isSupabaseConfigured,
+                      builder: (context, showDemoWarning, child) =>
+                          showDemoWarning
+                              ? Column(
+                                  children: [
+                                    const SizedBox(height: 24),
+                                    FadeTransition(
+                                      opacity: _fadeAnimation,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: Colors.orange.shade200,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.info_outline,
+                                              color: Colors.orange.shade700,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Demo Mode: Configure Supabase credentials in .env file for full authentication',
+                                                style: TextStyle(
+                                                  color: Colors.orange.shade700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
 
-                        // Phone Number Input Section
-                        if (authService.isSupabaseConfigured) ...[
+              // Bottom Section (Demo Mode Only)
+              Selector<AuthService, bool>(
+                selector: (context, authService) => !authService.isSupabaseConfigured,
+                builder: (context, showDemo, child) => showDemo
+                    ? Column(
+                        children: [
                           FadeTransition(
                             opacity: _fadeAnimation,
                             child: SlideTransition(
                               position: _slideAnimation,
-                              child: Column(
-                                children: [
-                                  // Back button (only show during OTP verification)
-                                  if (_isOtpSent) ...[
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: _goBackToPhoneInput,
-                                          icon: const Icon(
-                                            Icons.arrow_back_ios,
-                                          ),
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                        ),
-                                        Text(
-                                          'Back to Phone Number',
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-
-                                  // Phone Number Input Field (only show if OTP not sent)
-                                  if (!_isOtpSent) ...[
-                                    Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: Selector<AuthService, bool>(
+                                  selector: (context, authService) =>
+                                      authService.isLoading,
+                                  builder: (context, isLoading, child) =>
+                                      ElevatedButton(
+                                    onPressed: isLoading ? null : _continueWithDemo,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
+                                      foregroundColor:
+                                          Theme.of(context).colorScheme.onPrimary,
+                                      shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 1,
-                                        ),
                                       ),
-                                      child: TextField(
-                                        controller: _phoneController,
-                                        focusNode: _phoneFocusNode,
-                                        keyboardType: TextInputType.phone,
-                                        textInputAction: TextInputAction.done,
-                                        decoration: const InputDecoration(
-                                          hintText: 'Phone Number',
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 16,
-                                          ),
-                                          border: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 18,
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.phone,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                          LengthLimitingTextInputFormatter(15),
-                                        ],
-                                        onSubmitted: (_) => _sendOTP(),
-                                      ),
+                                      elevation: 0,
                                     ),
-                                    const SizedBox(height: 16),
-
-                                    // Send OTP Button
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 56,
-                                      child: ElevatedButton(
-                                        onPressed: authService.isLoading
-                                            ? null
-                                            : _sendOTP,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                          foregroundColor: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
+                                    child: isLoading
+                                        ? SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
                                             ),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: authService.isLoading
-                                            ? SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(
-                                                        Theme.of(
-                                                          context,
-                                                        ).colorScheme.onPrimary,
-                                                      ),
-                                                ),
-                                              )
-                                            : const Text(
-                                                'Send OTP',
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.play_arrow,
+                                                size: 24,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              const Text(
+                                                'Try Demo Mode',
                                                 style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                      ),
-                                    ),
-                                  ],
-
-                                  // OTP Input Field (only show if OTP sent)
-                                  if (_isOtpSent) ...[
-                                    Text(
-                                      'Enter the 6-digit code sent to',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _formatPhoneNumber(_phoneController.text),
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-
-                                    Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: TextField(
-                                        controller: _otpController,
-                                        focusNode: _otpFocusNode,
-                                        keyboardType: TextInputType.number,
-                                        textInputAction: TextInputAction.done,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 8,
-                                        ),
-                                        decoration: const InputDecoration(
-                                          hintText: '000000',
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 24,
-                                            letterSpacing: 8,
+                                            ],
                                           ),
-                                          border: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 18,
-                                          ),
-                                        ),
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                          LengthLimitingTextInputFormatter(6),
-                                        ],
-                                        onSubmitted: (_) => _verifyOtp(),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-
-                                    // Verify OTP Button
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 56,
-                                      child: ElevatedButton(
-                                        onPressed: authService.isLoading
-                                            ? null
-                                            : _verifyOtp,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                          foregroundColor: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: authService.isLoading
-                                            ? SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(
-                                                        Theme.of(
-                                                          context,
-                                                        ).colorScheme.onPrimary,
-                                                      ),
-                                                ),
-                                              )
-                                            : const Text(
-                                                'Verify OTP',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-
-                                    // Resend OTP Button
-                                    TextButton(
-                                      onPressed:
-                                          _resendCountdown > 0 ||
-                                              _isResendingOtp
-                                          ? null
-                                          : _resendOtp,
-                                      child: _isResendingOtp
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : Text(
-                                              _resendCountdown > 0
-                                                  ? 'Resend OTP in ${_resendCountdown}s'
-                                                  : 'Resend OTP',
-                                              style: TextStyle(
-                                                color: _resendCountdown > 0
-                                                    ? Colors.grey
-                                                    : Theme.of(
-                                                        context,
-                                                      ).colorScheme.primary,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                    ),
-                                  ],
-
-                                  // OR Divider and Google Sign-In (only show if OTP not sent)
-                                  if (!_isOtpSent) ...[
-                                    const SizedBox(height: 12),
-
-                                    // OR Divider
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Container(
-                                              height: 1,
-                                              color: Colors.grey.shade300,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                            ),
-                                            child: Text(
-                                              'OR',
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Container(
-                                              height: 1,
-                                              color: Colors.grey.shade300,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-
-                                    // Official Google Sign-In Button
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 56,
-                                      child: _isGoogleSignInInProgress
-                                          ? Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade100,
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                                border: Border.all(
-                                                  color: Colors.grey.shade300,
-                                                ),
-                                              ),
-                                              child: const Center(
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child: CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation<
-                                                              Color
-                                                            >(Colors.black54),
-                                                      ),
-                                                    ),
-                                                    SizedBox(width: 12),
-                                                    Text(
-                                                      'Signing in...',
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.black54,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            )
-                                          : SignInButton(
-                                              Buttons.google,
-                                              text: 'Continue with Google',
-                                              onPressed: authService.isLoading
-                                                  ? () {}
-                                                  : () => _continueWithGoogle(),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                            ),
-                                    ),
-                                  ],
-                                ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
 
-                        // Demo Mode Warning
-                        if (!authService.isSupabaseConfigured) ...[
-                          const SizedBox(height: 24),
+              // Error Message
+              Selector<AuthService, String?>(
+                selector: (context, authService) => authService.errorMessage,
+                builder: (context, errorMessage, child) => errorMessage != null
+                    ? Column(
+                        children: [
+                          const SizedBox(height: 16),
                           FadeTransition(
                             opacity: _fadeAnimation,
                             child: Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.orange.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.orange.shade200,
-                                ),
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade200),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.info_outline,
-                                    color: Colors.orange.shade700,
+                                    Icons.error_outline,
+                                    color: Colors.red.shade700,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Demo Mode: Configure Supabase credentials in .env file for full authentication',
+                                      errorMessage,
                                       style: TextStyle(
-                                        color: Colors.orange.shade700,
-                                        fontSize: 12,
+                                        color: Colors.red.shade700,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
@@ -836,109 +976,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             ),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-
-                  // Bottom Section (Demo Mode Only)
-                  if (!authService.isSupabaseConfigured) ...[
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: authService.isLoading
-                                ? null
-                                : _continueWithDemo,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: authService.isLoading
-                                ? SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.play_arrow,
-                                        size: 24,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimary,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Text(
-                                        'Try Demo Mode',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Error Message
-                  if (authService.errorMessage != null) ...[
-                    const SizedBox(height: 16),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Colors.red.shade700,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                authService.errorMessage!,
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              );
-            },
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ),
       ),

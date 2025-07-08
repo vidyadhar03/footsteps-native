@@ -44,7 +44,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute<void>(builder: (context) => const HomePage()),
       );
     } else if (mounted && authService.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,7 +66,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
   void _continueWithPhone() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const OnboardingScreen()));
+    ).push(MaterialPageRoute<void>(builder: (context) => const OnboardingScreen()));
   }
 
   Future<void> _continueWithDemo() async {
@@ -76,7 +76,7 @@ class _DirectLoginScreenState extends State<DirectLoginScreen>
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute<void>(builder: (context) => const HomePage()),
       );
     }
   }

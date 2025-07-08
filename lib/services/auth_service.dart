@@ -2,12 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/supabase_config.dart';
 import 'dart:io';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
   late final GoogleSignIn _googleSignIn;
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
 
   User? _user;
   bool _isLoading = false;
@@ -23,25 +32,20 @@ class AuthService extends ChangeNotifier {
   bool get isSupabaseConfigured => SupabaseConfig.isConfigured;
 
   AuthService() {
-    // Initialize Google Sign-In with correct client IDs per platform
-    // On Android, the GoogleSignIn plugin expects the *server* (web) client ID
-    // via the `serverClientId` parameter, **not** the Android client ID.
-    // Passing the Android client ID triggers a DEVELOPER_ERROR (code 10).
+    // Initialize Google Sign-In with platform-specific client IDs
+    // For basic sign-in, we only need the platform-specific client IDs
     if (kIsWeb) {
       // Web platform uses default initialization; Supabase handles OAuth flow.
       _googleSignIn = GoogleSignIn();
     } else {
       try {
         if (Platform.isAndroid) {
-          // Use the WEB client ID as serverClientId on Android
-          _googleSignIn = GoogleSignIn(
-            serverClientId: SupabaseConfig.googleClientIdWeb,
-          );
+          // Android uses default initialization - the google-services.json handles configuration
+          _googleSignIn = GoogleSignIn();
         } else if (Platform.isIOS) {
-          // iOS still requires its own clientId, but serverClientId should be the web client ID
+          // iOS requires explicit clientId configuration
           _googleSignIn = GoogleSignIn(
             clientId: SupabaseConfig.googleClientIdIos,
-            serverClientId: SupabaseConfig.googleClientIdWeb,
           );
         } else {
           // Fallback for other platforms
@@ -170,12 +174,20 @@ class AuthService extends ChangeNotifier {
         return await _signInWithGoogleMobile();
       }
     } catch (e) {
-      _setError('Google sign-in failed: ${e.toString()}');
       _setLoading(false);
       if (kDebugMode) {
         print('Google sign-in error: $e');
       }
-      return false;
+      
+      // Handle expected vs unexpected errors
+      if (e is AuthException || e.toString().contains('sign_in_canceled') || e.toString().contains('network_error')) {
+        _setError('Google sign-in failed: ${e.toString()}');
+        return false;
+      } else {
+        // Unexpected error - rethrow for better debugging
+        _setError('An unexpected error occurred during Google sign-in');
+        rethrow;
+      }
     }
   }
 
@@ -308,12 +320,20 @@ class AuthService extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _setError('Phone sign-in failed: ${e.toString()}');
       _setLoading(false);
       if (kDebugMode) {
         print('Phone sign-in error: $e');
       }
-      return false;
+      
+      // Handle expected vs unexpected errors
+      if (e is AuthException) {
+        _setError('Phone sign-in failed: ${e.message}');
+        return false;
+      } else {
+        // Unexpected error - rethrow for better debugging
+        _setError('An unexpected error occurred during phone sign-in');
+        rethrow;
+      }
     }
   }
 
@@ -346,15 +366,23 @@ class AuthService extends ChangeNotifier {
         _setLoading(false);
         return true;
       } else {
-        throw Exception('OTP verification failed');
+        throw const AuthException('OTP verification failed - no user returned');
       }
     } catch (e) {
-      _setError('OTP verification failed: ${e.toString()}');
       _setLoading(false);
       if (kDebugMode) {
         print('OTP verification error: $e');
       }
-      return false;
+      
+      // Handle expected vs unexpected errors
+      if (e is AuthException) {
+        _setError('OTP verification failed: ${e.message}');
+        return false;
+      } else {
+        // Unexpected error - rethrow for better debugging
+        _setError('An unexpected error occurred during OTP verification');
+        rethrow;
+      }
     }
   }
 
@@ -365,16 +393,16 @@ class AuthService extends ChangeNotifier {
       _setError(null);
 
       // Simulate sign-in delay
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
 
-      // Create a mock user for demo purposes
-      _user = User(
-        id: 'demo-user-123',
-        appMetadata: {},
-        userMetadata: {'full_name': 'Demo User', 'avatar_url': ''},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
+              // Create a mock user for demo purposes
+        _user = const User(
+          id: 'demo-user-123',
+          appMetadata: {},
+          userMetadata: {'full_name': 'Demo User', 'avatar_url': ''},
+          aud: 'authenticated',
+          createdAt: '2024-01-01T00:00:00.000Z',
+        );
 
       await _saveUserPreferences();
 
@@ -417,13 +445,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Save user preferences
+  // Save user preferences using secure storage for sensitive data
   Future<void> _saveUserPreferences() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       if (_user != null) {
-        await prefs.setString('user_id', _user!.id);
-        await prefs.setString('user_email', _user!.email ?? '');
+        // Store sensitive user data in secure storage
+        await _secureStorage.write(key: 'user_id', value: _user!.id);
+        await _secureStorage.write(key: 'user_email', value: _user!.email ?? '');
+        
+        // Store non-sensitive authentication state in shared preferences
+        final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_authenticated', true);
       }
     } catch (e) {
@@ -436,10 +467,12 @@ class AuthService extends ChangeNotifier {
   // Clear user preferences (but preserve onboarding state)
   Future<void> _clearUserPreferences() async {
     try {
+      // Clear sensitive data from secure storage
+      await _secureStorage.delete(key: 'user_id');
+      await _secureStorage.delete(key: 'user_email');
+      
+      // Clear authentication state from shared preferences
       final prefs = await SharedPreferences.getInstance();
-      // Clear authentication data
-      await prefs.remove('user_id');
-      await prefs.remove('user_email');
       await prefs.setBool('is_authenticated', false);
 
       // IMPORTANT: Don't clear 'has_completed_onboarding'
@@ -459,15 +492,15 @@ class AuthService extends ChangeNotifier {
   // Get user profile information
   String get userDisplayName {
     if (_user == null) return '';
-    return _user!.userMetadata?['full_name'] ??
-        _user!.userMetadata?['name'] ??
+    return (_user!.userMetadata?['full_name'] as String?) ??
+        (_user!.userMetadata?['name'] as String?) ??
         _user!.email?.split('@')[0] ??
         'User';
   }
 
   String get userEmail => _user?.email ?? '';
 
-  String get userAvatarUrl => _user?.userMetadata?['avatar_url'] ?? '';
+  String get userAvatarUrl => (_user?.userMetadata?['avatar_url'] as String?) ?? '';
 
   // Clear error message
   void clearError() {

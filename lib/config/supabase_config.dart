@@ -84,7 +84,7 @@ class SupabaseConfig {
   static String? get googleClientIdForPlatform {
     // Handle web platform first
     if (kIsWeb) {
-      // For web, we use the web client ID
+      // For web, we use the web client ID (only for testing)
       return googleClientIdWeb;
     }
 
@@ -123,7 +123,7 @@ class SupabaseConfig {
   static Future<void> initialize() async {
     try {
       // Try to load environment variables
-      await dotenv.load(fileName: '.env.local').catchError((error) {
+      await dotenv.load(fileName: '.env.local').catchError((Object error) {
         if (kDebugMode) {
           print('Warning: Could not load .env.local file: $error');
         }
