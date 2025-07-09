@@ -352,7 +352,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -397,10 +397,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           'Turn your journeys into stories,\nstories into tribes',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.7),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.7),
                                 fontSize: 18,
                                 height: 1.5,
                               ),
@@ -553,7 +553,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .onSurface
-                                                  .withValues(alpha: 0.7),
+                                                  .withOpacity(0.7),
                                               fontSize: 16,
                                             ),
                                           ),
