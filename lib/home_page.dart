@@ -16,6 +16,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _tabContents = [
     const HomeTabContent(),
     const ExploreTabContent(),
+    const TribesTabContent(),
     const ProfileTabContent(),
   ];
 
@@ -40,35 +41,6 @@ class _HomePageState extends State<HomePage> {
               // TODO: Implement notifications
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Notifications coming soon!')),
-              );
-            },
-          ),
-          // Profile icon
-          Consumer<AuthService>(
-            builder: (context, authService, child) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentIndex = 2; // Switch to Profile tab
-                    });
-                  },
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage: authService.userAvatarUrl.isNotEmpty
-                        ? NetworkImage(authService.userAvatarUrl)
-                        : null,
-                    child: authService.userAvatarUrl.isEmpty
-                        ? Icon(
-                            Icons.person,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 20,
-                          )
-                        : null,
-                  ),
-                ),
               );
             },
           ),
@@ -114,6 +86,11 @@ class _HomePageState extends State<HomePage> {
               icon: Icon(Icons.explore_outlined),
               activeIcon: Icon(Icons.explore),
               label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.groups_outlined),
+              activeIcon: Icon(Icons.groups),
+              label: 'Tribes',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
@@ -392,6 +369,76 @@ class ExploreTabContent extends StatelessWidget {
   }
 }
 
+// Tribes Tab Content Widget
+class TribesTabContent extends StatelessWidget {
+  const TribesTabContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tribes',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Connect with like-minded people',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Placeholder content
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.groups_outlined,
+                    size: 80,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Coming Soon!',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tribes features will be available soon',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // Profile Tab Content Widget
 class ProfileTabContent extends StatelessWidget {
   const ProfileTabContent({super.key});
@@ -405,20 +452,11 @@ class ProfileTabContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Profile',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 32),
-
               // Profile Header
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 40,
+                    radius: 50,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     backgroundImage: authService.userAvatarUrl.isNotEmpty
                         ? NetworkImage(authService.userAvatarUrl)
@@ -427,7 +465,7 @@ class ProfileTabContent extends StatelessWidget {
                         ? Icon(
                             Icons.person,
                             color: Theme.of(context).colorScheme.onPrimary,
-                            size: 40,
+                            size: 50,
                           )
                         : null,
                   ),
@@ -438,22 +476,49 @@ class ProfileTabContent extends StatelessWidget {
                       children: [
                         Text(
                           authService.userDisplayName,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                        if (authService.userEmail.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            authService.userEmail,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.7),
+                        const SizedBox(height: 8),
+                        // Origin
+                        if (authService.userProfile?.origin != null && authService.userProfile!.origin!.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                authService.userProfile!.origin!,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                 ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        // Join date
+                        if (authService.userProfile?.createdAt != null) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Joined ${_formatJoinDate(authService.userProfile!.createdAt!)}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ],
@@ -463,63 +528,75 @@ class ProfileTabContent extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
-              // Profile Options
+              // Travel Statistics
               Expanded(
-                child: ListView(
-                  children: [
-                    _buildProfileOption(
-                      context,
-                      Icons.settings_outlined,
-                      'Settings',
-                      'App preferences and configuration',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Settings coming soon!'),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Travel Statistics',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Stats Cards Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              _formatNumber(authService.userProfile?.totalKm ?? 0.0),
+                              'KM Traveled',
+                              Icons.straighten_outlined,
+                              Colors.blue,
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    _buildProfileOption(
-                      context,
-                      Icons.help_outline,
-                      'Help & Support',
-                      'Get help and contact support',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Help coming soon!')),
-                        );
-                      },
-                    ),
-                    _buildProfileOption(
-                      context,
-                      Icons.info_outline,
-                      'About',
-                      'App version and information',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('About coming soon!')),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    _buildProfileOption(
-                      context,
-                      Icons.logout,
-                      'Sign Out',
-                      'Sign out of your account',
-                      () async {
-                        await authService.signOut();
-                        if (context.mounted) {
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            '/onboarding',
-                            (route) => false,
-                          );
-                        }
-                      },
-                      isDestructive: true,
-                    ),
-                  ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              context,
+                              '${authService.userProfile?.totalCountries ?? 0}',
+                              'Countries',
+                              Icons.public_outlined,
+                              Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Earth Rotations Card
+                      _buildStatCard(
+                        context,
+                        '${authService.userProfile?.earthRotations ?? 0}',
+                        'Earth Rotations',
+                        Icons.language_outlined,
+                        Colors.purple,
+                        isWide: true,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Style Tags
+                      Text(
+                        'Travel Style',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildStyleTags(context, authService.userProfile?.styleTags ?? []),
+                      const SizedBox(height: 32),
+
+                      // Compact Settings Options
+                      _buildCompactOptions(context, authService),
+                      const SizedBox(height: 16), // Extra bottom padding for scrolling
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -529,50 +606,221 @@ class ProfileTabContent extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileOption(
+  Widget _buildStatCard(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+    Color color, {
+    bool isWide = false,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: isWide
+            ? Row(
+                children: [
+                  Icon(icon, color: color, size: 32),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  Icon(icon, color: color, size: 32),
+                  const SizedBox(height: 12),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildStyleTags(BuildContext context, List<String> styleTags) {
+    if (styleTags.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'No travel styles added yet',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+    
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: styleTags.map((tag) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            tag,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatJoinDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatNumber(double number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toStringAsFixed(0);
+    }
+  }
+
+  Widget _buildCompactOptions(BuildContext context, AuthService authService) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildCompactOption(
+            context,
+            Icons.settings_outlined,
+            'Settings',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings coming soon!')),
+              );
+            },
+          ),
+          _buildCompactOption(
+            context,
+            Icons.help_outline,
+            'Help',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Help coming soon!')),
+              );
+            },
+          ),
+          _buildCompactOption(
+            context,
+            Icons.info_outline,
+            'About',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('About coming soon!')),
+              );
+            },
+          ),
+          _buildCompactOption(
+            context,
+            Icons.logout,
+            'Sign Out',
+            () async {
+              await authService.signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/onboarding',
+                  (route) => false,
+                );
+              }
+            },
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactOption(
     BuildContext context,
     IconData icon,
-    String title,
-    String subtitle,
+    String label,
     VoidCallback onTap, {
     bool isDestructive = false,
   }) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isDestructive
-              ? Colors.red
-              : Theme.of(context).colorScheme.primary,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isDestructive
+                  ? Colors.red
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: isDestructive
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDestructive
-                ? Colors.red
-                : Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: isDestructive
-                ? Colors.red.withOpacity(0.7)
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: isDestructive
-              ? Colors.red.withOpacity(0.7)
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-        ),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

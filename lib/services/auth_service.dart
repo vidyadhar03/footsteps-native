@@ -4,11 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/supabase_config.dart';
+import '../models/user_profile.dart';
+import '../repositories/profile_repository.dart';
 import 'dart:io';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
   late final GoogleSignIn _googleSignIn;
+  final ProfileRepository _profileRepository = ProfileRepository();
   static const _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
@@ -19,12 +22,14 @@ class AuthService extends ChangeNotifier {
   );
 
   User? _user;
+  UserProfile? _userProfile;
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasCompletedOnboarding = false;
 
   // Getters
   User? get user => _user;
+  UserProfile? get userProfile => _userProfile;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
@@ -135,6 +140,9 @@ class AuthService extends ChangeNotifier {
       }
     }
   }
+
+  // Note: Profile loading for existing sessions removed - 
+  // Profile will be created/updated when needed via the unified upsert endpoint
 
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -278,6 +286,9 @@ class AuthService extends ChangeNotifier {
         _user = response.user;
         await _saveUserPreferences();
 
+        // Create user profile after successful authentication
+        await _createUserProfile();
+
         // Mark onboarding as completed for mobile platforms
         await markOnboardingCompleted();
 
@@ -360,6 +371,9 @@ class AuthService extends ChangeNotifier {
         _user = response.user;
         await _saveUserPreferences();
 
+        // Create user profile after successful authentication
+        await _createUserProfile();
+
         // Mark onboarding as completed after successful OTP verification
         await markOnboardingCompleted();
 
@@ -435,6 +449,7 @@ class AuthService extends ChangeNotifier {
       await _clearUserPreferences();
 
       _user = null;
+      _userProfile = null;
       _setLoading(false);
     } catch (e) {
       _setError('Sign out failed: ${e.toString()}');
@@ -501,6 +516,54 @@ class AuthService extends ChangeNotifier {
   String get userEmail => _user?.email ?? '';
 
   String get userAvatarUrl => (_user?.userMetadata?['avatar_url'] as String?) ?? '';
+
+  // Create or update user profile after successful authentication
+  Future<void> _createUserProfile() async {
+    if (_user == null) return;
+
+    try {
+      if (kDebugMode) {
+        print('Creating/updating user profile for: ${_user!.id}');
+      }
+
+      // Create profile data to send to API
+      final profileData = UserProfile(
+        name: userDisplayName.isNotEmpty ? userDisplayName : 'User',
+        origin: null,
+        styleTags: [],
+        totalKm: 0.0,
+        totalCountries: 0,
+        earthRotations: 0,
+      );
+
+      // Call the single upsert endpoint
+      final response = await _profileRepository.upsertUserProfile(profileData);
+      
+      // Handle response and extract profile data
+      if (response['success'] == true && response['data'] != null) {
+        _userProfile = UserProfile.fromJson(response['data'] as Map<String, dynamic>);
+        
+        final isNewProfile = response['isNewProfile'] as bool? ?? false;
+        
+        if (kDebugMode) {
+          if (isNewProfile) {
+            print('New user profile created successfully');
+          } else {
+            print('Existing user profile updated successfully');
+          }
+        }
+      } else {
+        throw Exception('Invalid API response: ${response['message'] ?? 'Unknown error'}');
+      }
+
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error creating/updating user profile: $e');
+      }
+      // Don't throw - profile creation shouldn't break auth flow
+    }
+  }
 
   // Clear error message
   void clearError() {
