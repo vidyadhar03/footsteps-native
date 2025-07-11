@@ -5,6 +5,7 @@ import 'config/supabase_config.dart';
 import 'services/auth_service.dart';
 import 'onboarding_screen.dart';
 import 'home_page.dart';
+import 'screens/update_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,7 @@ class FootstepsApp extends StatelessWidget {
         routes: {
           '/onboarding': (context) => const OnboardingScreen(),
           '/home': (context) => const HomePage(),
+          '/profile-setup': (context) => const UpdateProfileScreen(isFromOnboarding: true),
         },
       ),
     );
@@ -79,10 +81,15 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Simplified authentication flow
+        // Enhanced authentication flow with profile setup
         if (authService.isAuthenticated) {
-          // User is logged in → go directly to main app
-          return const HomePage();
+          if (authService.needsProfileSetup) {
+            // User is authenticated but needs to set up profile
+            return const UpdateProfileScreen(isFromOnboarding: true);
+          } else {
+            // User is authenticated and has profile → go to main app
+            return const HomePage();
+          }
         } else {
           // User is not logged in → show onboarding
           return const OnboardingScreen();

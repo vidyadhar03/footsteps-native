@@ -26,6 +26,7 @@ class AuthService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasCompletedOnboarding = false;
+  bool _needsProfileSetup = false;
 
   // Getters
   User? get user => _user;
@@ -34,6 +35,7 @@ class AuthService extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
   bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+  bool get needsProfileSetup => _needsProfileSetup;
   bool get isSupabaseConfigured => SupabaseConfig.isConfigured;
 
   AuthService() {
@@ -286,8 +288,8 @@ class AuthService extends ChangeNotifier {
         _user = response.user;
         await _saveUserPreferences();
 
-        // Create user profile after successful authentication
-        await _createUserProfile();
+        // Check user profile after successful authentication
+        await _checkUserProfile();
 
         // Mark onboarding as completed for mobile platforms
         await markOnboardingCompleted();
@@ -371,8 +373,8 @@ class AuthService extends ChangeNotifier {
         _user = response.user;
         await _saveUserPreferences();
 
-        // Create user profile after successful authentication
-        await _createUserProfile();
+        // Check user profile after successful authentication
+        await _checkUserProfile();
 
         // Mark onboarding as completed after successful OTP verification
         await markOnboardingCompleted();
@@ -517,31 +519,63 @@ class AuthService extends ChangeNotifier {
 
   String get userAvatarUrl => (_user?.userMetadata?['avatar_url'] as String?) ?? '';
 
-  // Create or update user profile after successful authentication
-  Future<void> _createUserProfile() async {
+  // Check if user profile exists after authentication
+  Future<void> _checkUserProfile() async {
     if (_user == null) return;
+
+    try {
+      if (kDebugMode) {
+        print('Checking user profile for: ${_user!.id}');
+      }
+
+      // Check if profile exists
+      final response = await _profileRepository.getUserProfile();
+      
+      if (response['success'] == true && response['data'] != null) {
+        // Profile exists - load it
+        _userProfile = UserProfile.fromJson(response['data'] as Map<String, dynamic>);
+        _needsProfileSetup = false;
+        
+        if (kDebugMode) {
+          print('User profile loaded successfully');
+        }
+      } else {
+        // Profile doesn't exist - user needs to set it up
+        _userProfile = null;
+        _needsProfileSetup = true;
+        
+        if (kDebugMode) {
+          print('User profile not found - needs setup');
+        }
+      }
+
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking user profile: $e');
+      }
+      // On error, assume profile setup is needed
+      _needsProfileSetup = true;
+      notifyListeners();
+    }
+  }
+
+  // Create or update user profile (called from UpdateProfileScreen)
+  Future<bool> createOrUpdateProfile(UserProfile profile) async {
+    if (_user == null) return false;
 
     try {
       if (kDebugMode) {
         print('Creating/updating user profile for: ${_user!.id}');
       }
 
-      // Create profile data to send to API
-      final profileData = UserProfile(
-        name: userDisplayName.isNotEmpty ? userDisplayName : 'User',
-        origin: null,
-        styleTags: [],
-        totalKm: 0.0,
-        totalCountries: 0,
-        earthRotations: 0,
-      );
-
-      // Call the single upsert endpoint
-      final response = await _profileRepository.upsertUserProfile(profileData);
+      // Call the upsert endpoint
+      final response = await _profileRepository.upsertUserProfile(profile);
       
       // Handle response and extract profile data
       if (response['success'] == true && response['data'] != null) {
         _userProfile = UserProfile.fromJson(response['data'] as Map<String, dynamic>);
+        _needsProfileSetup = false;
         
         final isNewProfile = response['isNewProfile'] as bool? ?? false;
         
@@ -549,19 +583,21 @@ class AuthService extends ChangeNotifier {
           if (isNewProfile) {
             print('New user profile created successfully');
           } else {
-            print('Existing user profile updated successfully');
+            print('User profile updated successfully');
           }
         }
+
+        notifyListeners();
+        return true;
       } else {
         throw Exception('Invalid API response: ${response['message'] ?? 'Unknown error'}');
       }
-
-      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('Error creating/updating user profile: $e');
       }
-      // Don't throw - profile creation shouldn't break auth flow
+      _setError('Failed to save profile: ${e.toString()}');
+      return false;
     }
   }
 

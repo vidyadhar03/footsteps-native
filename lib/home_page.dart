@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
+import 'screens/update_profile_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -567,17 +568,6 @@ class ProfileTabContent extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-
-                      // Earth Rotations Card
-                      _buildStatCard(
-                        context,
-                        '${authService.userProfile?.earthRotations ?? 0}',
-                        'Earth Rotations',
-                        Icons.language_outlined,
-                        Colors.purple,
-                        isWide: true,
-                      ),
                       const SizedBox(height: 24),
 
                       // Style Tags
@@ -737,6 +727,32 @@ class ProfileTabContent extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          _buildCompactOption(
+            context,
+            Icons.edit_outlined,
+            'Edit Profile',
+            () async {
+              final result = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(
+                  builder: (context) => UpdateProfileScreen(
+                    isFromOnboarding: false,
+                    existingProfile: authService.userProfile,
+                  ),
+                ),
+              );
+              
+              // If profile was updated, the AuthService will automatically update
+              // and the UI will rebuild due to Consumer<AuthService>
+              if (result == true && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Profile updated successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+          ),
           _buildCompactOption(
             context,
             Icons.settings_outlined,
