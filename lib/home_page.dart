@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         automaticallyImplyLeading: false, // Remove back button
+        centerTitle: false, // Align title to the left
         actions: [
           // Notification icon
           IconButton(
@@ -456,19 +457,31 @@ class ProfileTabContent extends StatelessWidget {
               // Profile Header
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage: authService.userAvatarUrl.isNotEmpty
-                        ? NetworkImage(authService.userAvatarUrl)
-                        : null,
-                    child: authService.userAvatarUrl.isEmpty
-                        ? Icon(
-                            Icons.person,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 50,
-                          )
-                        : null,
+                  GestureDetector(
+                    onTap: () async {
+                      final authService = Provider.of<AuthService>(context, listen: false);
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => UpdateProfileScreen(
+                            isFromOnboarding: false,
+                            existingProfile: authService.userProfile,
+                            autoPickImage: true, // NEW: auto-open image picker
+                          ),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      backgroundImage: _getAvatarImage(authService),
+                      child: _getAvatarImage(authService) == null
+                          ? Icon(
+                              Icons.person,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 50,
+                            )
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
@@ -483,6 +496,18 @@ class ProfileTabContent extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
+                        // Bio
+                        if (authService.userProfile?.bio != null && authService.userProfile!.bio!.isNotEmpty) ...[
+                          Text(
+                            authService.userProfile!.bio!,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         // Origin
                         if (authService.userProfile?.origin != null && authService.userProfile!.origin!.isNotEmpty) ...[
                           Row(
@@ -801,6 +826,18 @@ class ProfileTabContent extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  ImageProvider? _getAvatarImage(AuthService authService) {
+    // Priority: Profile avatar > Google avatar > null
+    final profileAvatarUrl = authService.userProfile?.avatarUrl;
+    final googleAvatarUrl = authService.userAvatarUrl;
+    
+    final avatarUrl = profileAvatarUrl?.isNotEmpty == true 
+        ? profileAvatarUrl 
+        : (googleAvatarUrl.isNotEmpty ? googleAvatarUrl : null);
+    
+    return avatarUrl != null ? NetworkImage(avatarUrl) : null;
   }
 
   Widget _buildCompactOption(

@@ -517,7 +517,14 @@ class AuthService extends ChangeNotifier {
 
   String get userEmail => _user?.email ?? '';
 
-  String get userAvatarUrl => (_user?.userMetadata?['avatar_url'] as String?) ?? '';
+  String get userAvatarUrl {
+    final avatarUrl = (_user?.userMetadata?['avatar_url'] as String?) ?? '';
+    if (kDebugMode) {
+      print('User avatar URL from metadata: $avatarUrl');
+      print('Full user metadata: ${_user?.userMetadata}');
+    }
+    return avatarUrl;
+  }
 
   // Check if user profile exists after authentication
   Future<void> _checkUserProfile() async {
@@ -598,6 +605,48 @@ class AuthService extends ChangeNotifier {
       }
       _setError('Failed to save profile: ${e.toString()}');
       return false;
+    }
+  }
+
+  // Upload avatar image to Supabase Storage
+  Future<String?> uploadAvatarImage(File imageFile) async {
+    if (!isSupabaseConfigured || _user == null) return null;
+
+    try {
+      if (kDebugMode) {
+        print('Uploading avatar image for user: ${_user!.id}');
+      }
+
+      // Generate unique filename
+      final fileName = 'avatar_${_user!.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final filePath = 'avatars/$fileName';
+
+      // Upload file to Supabase Storage
+      final response = await _supabase.storage
+          .from('avatars') // Make sure this bucket exists in your Supabase project
+          .upload(filePath, imageFile);
+
+      if (kDebugMode) {
+        print('Avatar upload response: $response');
+      }
+
+      // Get public URL
+      final publicUrl = _supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+      if (kDebugMode) {
+        print('Avatar public URL: $publicUrl');
+      }
+
+      return publicUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error uploading avatar: $e');
+        print('This might be because the "avatars" bucket doesn\'t exist in Supabase Storage');
+        print('For now, we\'ll skip avatar upload and use existing avatar');
+      }
+      return null;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,11 +10,13 @@ import '../services/auth_service.dart';
 class UpdateProfileScreen extends StatefulWidget {
   final bool isFromOnboarding;
   final UserProfile? existingProfile;
+  final bool autoPickImage; // NEW
 
   const UpdateProfileScreen({
     super.key,
     this.isFromOnboarding = false,
     this.existingProfile,
+    this.autoPickImage = false, // NEW
   });
 
   @override
@@ -48,6 +51,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   void initState() {
     super.initState();
     _initializeWithExistingProfile();
+    // NEW: Auto-pick image if requested
+    if (widget.autoPickImage) {
+      Future.delayed(Duration.zero, _pickImage);
+    }
   }
 
   void _initializeWithExistingProfile() {
@@ -144,6 +151,42 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
+      // Handle avatar upload if new image is selected
+      String? avatarUrlToUse;
+      if (_selectedImage != null) {
+        if (kDebugMode) {
+          print('Uploading new avatar image...');
+        }
+        avatarUrlToUse = await authService.uploadAvatarImage(_selectedImage!);
+        if (kDebugMode) {
+          print('Avatar upload result: $avatarUrlToUse');
+        }
+        
+        // If upload failed, show message but continue with profile update
+        if (avatarUrlToUse == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Avatar upload failed. Profile will be updated without new avatar.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          // Use existing avatar URL as fallback
+          avatarUrlToUse = widget.existingProfile?.avatarUrl ?? authService.userAvatarUrl;
+        }
+      } else {
+        // Use existing avatar URL
+        avatarUrlToUse = widget.existingProfile?.avatarUrl ?? authService.userAvatarUrl;
+      }
+      
+      if (kDebugMode) {
+        print('Avatar URL being sent to backend: $avatarUrlToUse');
+        print('Google avatar URL: ${authService.userAvatarUrl}');
+        print('Existing profile avatar: ${widget.existingProfile?.avatarUrl}');
+      }
+      
       // Create profile with form data
       final profile = UserProfile(
         name: _nameController.text.trim().isNotEmpty 
@@ -155,7 +198,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         styleTags: _selectedTravelStyles,
         totalKm: double.tryParse(_totalKmController.text) ?? 0.0,
         totalCountries: int.tryParse(_totalCountriesController.text) ?? 0,
-        avatarUrl: null, // TODO: Implement avatar upload to storage
+        avatarUrl: avatarUrlToUse,
         timezone: 'Asia/Kolkata',
       );
 
@@ -202,6 +245,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         final profile = UserProfile(
           name: authService.userDisplayName,
           email: authService.userEmail,
+          avatarUrl: authService.userAvatarUrl.isNotEmpty ? authService.userAvatarUrl : null,
           timezone: 'Asia/Kolkata',
         );
 
