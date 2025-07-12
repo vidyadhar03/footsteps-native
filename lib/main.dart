@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/step_counter_provider.dart';
 import 'config/supabase_config.dart';
+import 'config/mapbox_config.dart';
 import 'services/auth_service.dart';
 import 'onboarding_screen.dart';
 import 'home_page.dart';
@@ -15,6 +17,10 @@ void main() async {
   try {
     // Initialize Supabase
     await SupabaseConfig.initialize();
+    
+    // Initialize Mapbox
+    MapboxOptions.setAccessToken(MapboxConfig.accessToken);
+    
     runApp(const FootstepsApp());
   } catch (e) {
     // Handle initialization errors

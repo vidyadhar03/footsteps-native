@@ -23,8 +23,8 @@ class HomePage extends StatelessWidget {
     final int currentIndex = navigationProvider.currentIndex;
 
     return Scaffold(
-      // Global Top App Bar
-      appBar: AppBar(
+      // Global Top App Bar - hidden for explore tab (index 1)
+      appBar: currentIndex == 1 ? null : AppBar(
         title: const Text(
           'Footsteps',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),

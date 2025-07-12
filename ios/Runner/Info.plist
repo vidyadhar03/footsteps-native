@@ -43,6 +43,10 @@
 	<true/>
 	<key>GIDClientID</key>
 	<string>72287434828-p3fs9v9ikv9td51poniukoqinim4sugj.apps.googleusercontent.com</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Footsteps needs location access to show your position on the map and help you explore places around you.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Footsteps needs location access to show your position on the map and help you explore places around you.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

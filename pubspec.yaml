@@ -59,6 +59,11 @@ dependencies:
   # UI Components for profile setup
   country_picker: ^2.0.23
   image_picker: ^1.1.2
+  
+  # Mapbox for interactive maps
+  mapbox_maps_flutter: ^2.0.0
+  geolocator: ^10.1.0
+  permission_handler: ^11.1.0
 
 dev_dependencies:
   flutter_test:
