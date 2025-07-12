@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'providers/navigation_provider.dart';
+import 'providers/step_counter_provider.dart';
 import 'config/supabase_config.dart';
 import 'services/auth_service.dart';
 import 'onboarding_screen.dart';
@@ -25,8 +27,12 @@ class FootstepsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthService(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthService()),
+        ChangeNotifierProvider(create: (context) => NavigationProvider()),
+        ChangeNotifierProvider(create: (context) => StepCounterProvider()),
+      ],
       child: MaterialApp(
         title: 'Footsteps',
         debugShowCheckedModeBanner: false,
